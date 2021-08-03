@@ -108,9 +108,9 @@ public class Promise<Output>: CustomDebugStringConvertible {
         let listeners = listeners
         self.listeners = []
         
-        CFRunLoopPerformBlock(resolveLoop, CFRunLoopMode.defaultMode.rawValue) {
-            listeners.forEach {
-                $0(result)
+        for listener in listeners {
+            CFRunLoopPerformBlock(resolveLoop, CFRunLoopMode.defaultMode.rawValue) {
+                listener(result)
             }
         }
     }
