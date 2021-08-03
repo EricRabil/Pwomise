@@ -113,6 +113,8 @@ public class Promise<Output>: CustomDebugStringConvertible {
                 listener(result)
             }
         }
+        
+        CFRunLoopWakeUp(resolveLoop)
     }
     
     // Changes the RunLoop downstream listeners are invoked on
