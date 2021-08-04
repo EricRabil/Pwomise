@@ -151,6 +151,20 @@ public extension Promise where Output: Collection {
             $0.first
         }
     }
+    
+    @inlinable
+    func sorted<Value: Comparable>(usingKey key: KeyPath<Element, Value>, by areInIncreasingOrder: @escaping (Value, Value) throws -> Bool) -> Promise<[Element]> {
+        then {
+            try $0.sorted(usingKey: key, by: areInIncreasingOrder)
+        }
+    }
+    
+    @inlinable
+    func sorted<Value: Comparable>(usingKey key: KeyPath<Element, Optional<Value>>, withDefaultValue defaultValue: @autoclosure @escaping () -> Value, by areInIncreasingOrder: @escaping (Value, Value) throws -> Bool) -> Promise<[Element]> {
+        then {
+            try $0.sorted(usingKey: key, withDefaultValue: defaultValue(), by: areInIncreasingOrder)
+        }
+    }
 }
 
 public extension Promise where Output: Collection, Output.Element: Collection {
