@@ -39,7 +39,7 @@ public extension Promise where Output: Collection {
         }
     }
     
-    @inlinable @_transparent
+    @inlinable
     @discardableResult
     func forEach(_ cb: @escaping (Output.Element) throws -> Void) -> Promise<Void> {
         then {
