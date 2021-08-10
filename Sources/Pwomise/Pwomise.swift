@@ -43,7 +43,7 @@ public class Promise<Output>: CustomDebugStringConvertible {
         return superPromise
     }
     
-    public var resolveLoop = CFRunLoopGetMain()
+    public var resolveQueue = DispatchQueue.main
     
     /// The underlying status of the promise
     private var result: Pending = .pending {
@@ -109,18 +109,16 @@ public class Promise<Output>: CustomDebugStringConvertible {
         self.listeners = []
         
         for listener in listeners {
-            CFRunLoopPerformBlock(resolveLoop, CFRunLoopMode.defaultMode.rawValue) {
+            resolveQueue.schedule {
                 listener(result)
             }
         }
-        
-        CFRunLoopWakeUp(resolveLoop)
     }
     
     // Changes the RunLoop downstream listeners are invoked on
     @discardableResult
-    public func resolve(on resolveLoop: RunLoop) -> Self {
-        self.resolveLoop = resolveLoop.getCFRunLoop()
+    public func resolve(on queue: DispatchQueue) -> Self {
+        self.resolveQueue = queue
         return self
     }
     
