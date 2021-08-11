@@ -36,3 +36,15 @@ extension Promise where Output: _OptionalConvertible {
         }
     }
 }
+
+extension Promise where Output: Equatable {
+    public func expect(_ value: Output, failure: @autoclosure @escaping () -> Error) -> Promise<Output> {
+        then { output in
+            guard output == value else {
+                throw failure()
+            }
+            
+            return output
+        }
+    }
+}
