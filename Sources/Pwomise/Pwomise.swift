@@ -84,6 +84,14 @@ public class Promise<Output>: CustomDebugStringConvertible {
         })
     }
     
+    public init(catching cb: @escaping () throws -> Output) {
+        do {
+            result = .resolved(.success(try cb()))
+        } catch {
+            result = .resolved(.failure(error))
+        }
+    }
+    
     public init(result: Completion) {
         self.result = .resolved(result)
     }
