@@ -9,6 +9,7 @@ import Foundation
 
 public protocol _Scheduler {
     func schedule(_ block: @escaping () -> ())
+    func wake()
 }
 
 extension DispatchQueue: _Scheduler {
@@ -17,11 +18,19 @@ extension DispatchQueue: _Scheduler {
             block()
         }
     }
+    
+    public func wake() {
+        
+    }
 }
 
 extension RunLoop: _Scheduler {
     public func schedule(_ block: @escaping () -> ()) {
         CFRunLoopPerformBlock(getCFRunLoop(), CFRunLoopMode.defaultMode.rawValue, block)
+    }
+    
+    public func wake() {
+        CFRunLoopWakeUp(getCFRunLoop())
     }
 }
 
@@ -35,6 +44,7 @@ public extension _Scheduler {
                     reject(error)
                 }
             }
+            self.wake()
         }
     }
     
@@ -47,6 +57,7 @@ public extension _Scheduler {
                     reject(error)
                 }
             }
+            self.wake()
         }
     }
 }

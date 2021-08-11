@@ -43,7 +43,7 @@ public class Promise<Output>: CustomDebugStringConvertible {
         return superPromise
     }
     
-    public var resolveQueue = DispatchQueue.main
+    public var resolveQueue: _Scheduler = DispatchQueue.main
     
     /// The underlying status of the promise
     private var result: Pending = .pending {
@@ -113,6 +113,8 @@ public class Promise<Output>: CustomDebugStringConvertible {
                 listener(result)
             }
         }
+        
+        resolveQueue.wake()
     }
     
     // Changes the RunLoop downstream listeners are invoked on
