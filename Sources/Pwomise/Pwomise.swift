@@ -117,9 +117,15 @@ public class Promise<Output>: CustomDebugStringConvertible {
     
     // Changes the RunLoop downstream listeners are invoked on
     @discardableResult
-    public func resolve(on queue: DispatchQueue) -> Self {
-        self.resolveQueue = queue
-        return self
+    public func resolve(on queue: DispatchQueue) -> Promise<Output> {
+        let newPromise = Promise()
+        newPromise.resolveQueue = queue
+        
+        always { result in
+            newPromise.result = .resolved(result)
+        }
+        
+        return newPromise
     }
     
     // Invoked when the promise resolves, receiving the result and returning a downstream promise representing the return value
