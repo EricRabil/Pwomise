@@ -46,7 +46,7 @@ public class Promise<Output>: CustomDebugStringConvertible {
     public var resolveQueue: _Scheduler = DispatchQueue.main
     
     /// The underlying status of the promise
-    private var result: Pending = .pending {
+    internal var result: Pending = .pending {
         didSet {
             // We resolved!! Tell the listeners
             emit()
@@ -88,7 +88,7 @@ public class Promise<Output>: CustomDebugStringConvertible {
         self.result = .resolved(result)
     }
     
-    private init() {}
+    internal init() {}
     
     public var pending: Bool {
         result == .pending
