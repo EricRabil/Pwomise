@@ -6,13 +6,14 @@
 //
 
 import Foundation
+#if canImport(Combine)
 import Combine
 
 /// Naive? probably.
-@available(macOS 10.15, *)
+@available(macOS 10.15, iOS 13.0, *)
 private var cancellables = Set<AnyCancellable>()
 
-@available(macOS 10.15, *)
+@available(macOS 10.15, iOS 13.0, *)
 public extension Publisher {
     var promise: Promise<Output> {
         let promise = Promise<Output>()
@@ -31,3 +32,5 @@ public extension Publisher {
         return promise
     }
 }
+
+#endif
