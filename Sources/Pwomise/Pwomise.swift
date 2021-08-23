@@ -14,6 +14,10 @@ public class Promise<Output>: CustomDebugStringConvertible {
     public typealias Reject = (Error) -> ()
     
     public static func all(_ promises: [Promise<Output>]) -> Promise<[Output]> {
+        guard promises.count > 0 else {
+            return .success([])
+        }
+        
         let superPromise = Promise<[Output]>()
         
         var outputs = [Output]() {
