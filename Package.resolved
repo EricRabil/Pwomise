@@ -5,9 +5,9 @@
         "package": "Swexy",
         "repositoryURL": "https://github.com/EricRabil/Swexy",
         "state": {
-          "branch": "1.0.0",
+          "branch": null,
           "revision": "0db5aff4a640e8fd89598aed0a184a7a22cc7990",
-          "version": null
+          "version": "1.0.0"
         }
       }
     ]
