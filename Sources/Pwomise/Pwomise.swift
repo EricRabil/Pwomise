@@ -58,6 +58,7 @@ public class Promise<Output>: CustomDebugStringConvertible {
         willSet {
             guard result == .pending, newValue != .pending else {
                 /// Result can only be set once – its a promise of a result, not a publisher
+                print(Thread.callStackSymbols.joined(separator: "\n"))
                 preconditionFailure("result is omnidirectional, from pending to resolved.")
             }
         }
