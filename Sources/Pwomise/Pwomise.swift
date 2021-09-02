@@ -39,6 +39,10 @@ public class Promise<Output>: CustomDebugStringConvertible {
                 case .success(let output):
                     outputs.append(output)
                 case .failure(let error):
+                    guard superPromise.pending else {
+                        return
+                    }
+                    
                     superPromise.result = .resolved(.failure(error))
                 }
             }
@@ -49,6 +53,8 @@ public class Promise<Output>: CustomDebugStringConvertible {
     
     public var resolveQueue: _Scheduler = DispatchQueue.main
     
+    private var resolutionStackTrace: [String] = []
+    
     /// The underlying status of the promise
     internal var result: Pending = .pending {
         didSet {
@@ -58,9 +64,10 @@ public class Promise<Output>: CustomDebugStringConvertible {
         willSet {
             guard result == .pending, newValue != .pending else {
                 /// Result can only be set once – its a promise of a result, not a publisher
-                print(Thread.callStackSymbols.joined(separator: "\n"))
+                print(resolutionStackTrace.joined(separator: "\n"))
                 preconditionFailure("result is omnidirectional, from pending to resolved.")
             }
+            resolutionStackTrace = Thread.callStackSymbols
         }
     }
     
@@ -77,14 +84,26 @@ public class Promise<Output>: CustomDebugStringConvertible {
     
     public init(_ cb: (@escaping Resolve, @escaping Reject) -> ()) {
         cb({ output in
+            guard self.pending else {
+                preconditionFailure("cannot overwrite promise state")
+            }
+            
             self.result = .resolved(.success(output))
         }, { error in
+            guard self.pending else {
+                preconditionFailure("cannot overwrite promise state")
+            }
+            
             self.result = .resolved(.failure(error))
         })
     }
     
     public init(_ cb: (@escaping Resolve) -> ()) {
         cb({ output in
+            guard self.pending else {
+                preconditionFailure("cannot overwrite promise state")
+            }
+            
             self.result = .resolved(.success(output))
         })
     }
@@ -136,7 +155,7 @@ public class Promise<Output>: CustomDebugStringConvertible {
         let newPromise = Promise()
         newPromise.resolveQueue = queue
         
-        always { result in
+        listeners.append { result in
             newPromise.result = .resolved(result)
         }
         
@@ -147,6 +166,7 @@ public class Promise<Output>: CustomDebugStringConvertible {
     @discardableResult
     public func always<R>(_ cb: @escaping (Completion) throws -> R) -> Promise<R> {
         let promise = Promise<R>()
+        
         listeners.append { result in
             do {
                 promise.result = .resolved(.success(try cb(result)))
@@ -162,6 +182,7 @@ public class Promise<Output>: CustomDebugStringConvertible {
     @discardableResult
     public func always<R: PromiseConvertible>(_ cb: @escaping (Completion) throws -> R) -> Promise<R.Output> {
         let promise = Promise<R.Output>()
+        
         listeners.append { result in
             do {
                 try cb(result).asPromise.always { result in
