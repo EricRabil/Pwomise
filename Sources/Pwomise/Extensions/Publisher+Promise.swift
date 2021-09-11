@@ -18,16 +18,22 @@ public extension Publisher {
     var promise: Promise<Output> {
         let promise = Promise<Output>()
         
-        sink(receiveCompletion: {
+        var cancellable: AnyCancellable?
+        
+        cancellable = sink(receiveCompletion: {
             switch $0 {
             case .failure(let err):
                 promise.result = .resolved(.failure(err))
+                cancellable?.cancel()
+                cancellable = nil
             default:
                 break
             }
         }, receiveValue: { value in
             promise.result = .resolved(.success(value))
-        }).store(in: &cancellables)
+            cancellable?.cancel()
+            cancellable = nil
+        })
         
         return promise
     }
