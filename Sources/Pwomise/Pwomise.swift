@@ -9,6 +9,7 @@ public protocol PromiseConvertible {
 
 public enum PromiseInconsistencyError: Error {
     case emptyArray
+    case opaqueMismatch
 }
 
 public class Promise<Output>: CustomDebugStringConvertible {
@@ -95,7 +96,7 @@ public class Promise<Output>: CustomDebugStringConvertible {
         }
     }
     
-    private var listeners: [(Completion) -> ()] = [] {
+    internal var listeners: [(Completion) -> ()] = [] {
         didSet {
             guard listeners.count > 0 else {
                 return
