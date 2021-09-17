@@ -7,11 +7,35 @@ public protocol PromiseConvertible {
     var asPromise: Promise<Output> { get }
 }
 
+public enum PromiseInconsistencyError: Error {
+    case emptyArray
+}
+
 public class Promise<Output>: CustomDebugStringConvertible {
     internal typealias Pending = PendingPromise<Output, Error>
     public typealias Completion = Result<Output, Error>
     public typealias Resolve = (Output) -> ()
     public typealias Reject = (Error) -> ()
+    
+    public static func any(_ promises: [Promise<Output>]) -> Promise<Output> {
+        guard promises.count > 0 else {
+            return .failure(PromiseInconsistencyError.emptyArray)
+        }
+        
+        let superPromise = Promise()
+        
+        for promise in promises {
+            promise.always { completion in
+                guard superPromise.pending else {
+                    return
+                }
+                
+                superPromise.result = .resolved(completion)
+            }
+        }
+        
+        return superPromise
+    }
     
     public static func all(_ promises: [Promise<Output>]) -> Promise<[Output]> {
         guard promises.count > 0 else {
