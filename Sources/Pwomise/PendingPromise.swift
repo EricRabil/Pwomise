@@ -7,8 +7,8 @@
 
 import Foundation
 
-internal enum PendingPromise<Output, Failure: Error>: Equatable, CustomDebugStringConvertible {
-    internal static func == (lhs: PendingPromise<Output, Failure>, rhs: PendingPromise<Output, Failure>) -> Bool {
+public enum PendingPromise<Output, Failure: Error>: Equatable, CustomDebugStringConvertible {
+    public static func == (lhs: PendingPromise<Output, Failure>, rhs: PendingPromise<Output, Failure>) -> Bool {
         switch lhs {
         case .pending:
             switch rhs {
@@ -30,7 +30,7 @@ internal enum PendingPromise<Output, Failure: Error>: Equatable, CustomDebugStri
     case pending
     case resolved(Result<Output, Failure>)
     
-    internal var debugDescription: String {
+    public var debugDescription: String {
         switch self {
         case .pending:
             return "pending"

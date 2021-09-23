@@ -12,6 +12,12 @@ public enum PromiseInconsistencyError: Error {
     case opaqueMismatch
 }
 
+public protocol PromiseAbuseDelegate {
+    func promise<T>(_ promise: Promise<T>, doubleResolvedWithResult result: PendingPromise<T, Error>, resolutionStackTrace: [String], abusingStackTrace: [String])
+}
+
+public var SharedPromiseAbuseDelegate: PromiseAbuseDelegate?
+
 public class Promise<Output>: CustomDebugStringConvertible {
     internal typealias Pending = PendingPromise<Output, Error>
     public typealias Completion = Result<Output, Error>
@@ -89,9 +95,16 @@ public class Promise<Output>: CustomDebugStringConvertible {
         willSet {
             guard result == .pending, newValue != .pending else {
                 /// Result can only be set once – its a promise of a result, not a publisher
-                print(resolutionStackTrace.joined(separator: "\n"))
-                preconditionFailure("result is omnidirectional, from pending to resolved.")
+                if let abuseDelegate = SharedPromiseAbuseDelegate {
+                    abuseDelegate.promise(self, doubleResolvedWithResult: newValue, resolutionStackTrace: resolutionStackTrace, abusingStackTrace: Thread.callStackSymbols)
+                } else {
+                    print(resolutionStackTrace.joined(separator: "\n"))
+                    preconditionFailure("result is omnidirectional, from pending to resolved.")
+                }
+                
+                return
             }
+            
             resolutionStackTrace = Thread.callStackSymbols
         }
     }
@@ -109,26 +122,14 @@ public class Promise<Output>: CustomDebugStringConvertible {
     
     public init(_ cb: (@escaping Resolve, @escaping Reject) -> ()) {
         cb({ output in
-            guard self.pending else {
-                preconditionFailure("cannot overwrite promise state")
-            }
-            
             self.result = .resolved(.success(output))
         }, { error in
-            guard self.pending else {
-                preconditionFailure("cannot overwrite promise state")
-            }
-            
             self.result = .resolved(.failure(error))
         })
     }
     
     public init(_ cb: (@escaping Resolve) -> ()) {
         cb({ output in
-            guard self.pending else {
-                preconditionFailure("cannot overwrite promise state")
-            }
-            
             self.result = .resolved(.success(output))
         })
     }
