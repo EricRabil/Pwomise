@@ -200,6 +200,7 @@ public class Promise<Output>: CustomDebugStringConvertible {
     @discardableResult
     public func always<R>(_ cb: @escaping (Completion) throws -> R) -> Promise<R> {
         let promise = Promise<R>()
+        promise.resolveQueue = resolveQueue
         
         listeners.append { result in
             do {
@@ -216,6 +217,7 @@ public class Promise<Output>: CustomDebugStringConvertible {
     @discardableResult
     public func always<R: PromiseConvertible>(_ cb: @escaping (Completion) throws -> R) -> Promise<R.Output> {
         let promise = Promise<R.Output>()
+        promise.resolveQueue = resolveQueue
         
         listeners.append { result in
             do {
@@ -234,6 +236,8 @@ public class Promise<Output>: CustomDebugStringConvertible {
     @discardableResult
     public func then<R: PromiseConvertible>(_ cb: @escaping (Output) throws -> R) -> Promise<R.Output> {
         let promise = Promise<R.Output>()
+        promise.resolveQueue = resolveQueue
+        
         listeners.append { result in
             do {
                 switch result {
@@ -256,6 +260,8 @@ public class Promise<Output>: CustomDebugStringConvertible {
     @discardableResult
     public func then<R>(_ cb: @escaping (Output) throws -> R) -> Promise<R> {
         let promise = Promise<R>()
+        promise.resolveQueue = resolveQueue
+        
         listeners.append { result in
             do {
                 switch result {
@@ -276,6 +282,8 @@ public class Promise<Output>: CustomDebugStringConvertible {
     @discardableResult
     public func `catch`<R: PromiseConvertible>(_ cb: @escaping (Error) throws -> R) -> Promise<R.Output> where R.Output == Output {
         let promise = Promise<Output>()
+        promise.resolveQueue = resolveQueue
+        
         listeners.append { result in
             do {
                 switch result {
@@ -298,6 +306,8 @@ public class Promise<Output>: CustomDebugStringConvertible {
     @discardableResult
     public func `catch`(_ cb: @escaping (Error) throws -> Output) -> Promise<Output> {
         let promise = Promise<Output>()
+        promise.resolveQueue = resolveQueue
+        
         listeners.append { result in
             do {
                 switch result {
