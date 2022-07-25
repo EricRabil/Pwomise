@@ -18,6 +18,11 @@ public protocol PromiseAbuseDelegate {
 
 public var SharedPromiseAbuseDelegate: PromiseAbuseDelegate?
 
+typealias dispatch_get_current_queue_t = @convention(c) () -> Unmanaged<DispatchQueue>
+private let dispatch_get_current_queue = dlsym(dlopen(nil, RTLD_GLOBAL), "dispatch_get_current_queue").map {
+    unsafeBitCast($0, to: dispatch_get_current_queue_t.self)
+}
+
 public class Promise<Output>: CustomDebugStringConvertible {
     internal typealias Pending = PendingPromise<Output, Error>
     public typealias Completion = Result<Output, Error>
@@ -109,7 +114,9 @@ public class Promise<Output>: CustomDebugStringConvertible {
         }
     }
     
-    internal var listeners: [(Completion) -> ()] = [] {
+    typealias Listener = (Completion) -> ()
+    
+    internal var listeners: [Listener] = [] {
         didSet {
             guard listeners.count > 0 else {
                 return
@@ -156,6 +163,31 @@ public class Promise<Output>: CustomDebugStringConvertible {
         result != .pending
     }
     
+    private func createExecutorFunction(_ result: Completion) -> ((@escaping Listener) -> ())? {
+        switch resolveQueue {
+        case is OS_dispatch_queue_concurrent:
+            // this should be scheduled concurrently, it must have an executor
+            break
+        case let queue as DispatchQueue:
+            if dispatch_get_current_queue?().takeUnretainedValue() == queue {
+                // same queue, passthrough
+                return nil
+            }
+        case let runLoop as RunLoop:
+            if RunLoop.current == runLoop {
+                // same runloop, passthrough
+                return nil
+            }
+        default:
+            break
+        }
+        return { listener in
+            self.resolveQueue.schedule {
+                listener(result)
+            }
+        }
+    }
+    
     private func emit() {
         guard case .resolved(let result) = result, listeners.count > 0 else {
             // Not resolved or no listeners
@@ -166,13 +198,12 @@ public class Promise<Output>: CustomDebugStringConvertible {
         let listeners = listeners
         self.listeners = []
         
-        for listener in listeners {
-            resolveQueue.schedule {
-                listener(result)
-            }
+        if let executor = createExecutorFunction(result) {
+            listeners.forEach(executor)
+            resolveQueue.wake()
+        } else {
+            listeners.forEach { $0(result) }
         }
-        
-        resolveQueue.wake()
     }
     
     // Changes the RunLoop downstream listeners are invoked on
