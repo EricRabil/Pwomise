@@ -188,6 +188,14 @@ public class Promise<Output>: CustomDebugStringConvertible {
         return newPromise
     }
     
+    // Changes the RunLoop downstream listeners are invoked on
+    @discardableResult
+    public func resolving(on queue: _Scheduler) -> Promise<Output> {
+        resolveQueue = queue
+        
+        return self
+    }
+    
     // Invoked when the promise resolves, receiving the result and returning a downstream promise representing the return value
     @discardableResult
     public func always<R>(_ cb: @escaping (Completion) throws -> R) -> Promise<R> {
