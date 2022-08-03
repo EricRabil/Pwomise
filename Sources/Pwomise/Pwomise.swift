@@ -1,4 +1,5 @@
 import Foundation
+import Swog
 
 public protocol PromiseConvertible {
     associatedtype Output
@@ -16,6 +17,7 @@ public protocol PromiseAbuseDelegate {
     func promise<T>(_ promise: Promise<T>, doubleResolvedWithResult result: PendingPromise<T, Error>, resolutionStackTrace: [String], abusingStackTrace: [String])
 }
 
+private let abuseLog = Logger(category: "Abuse", subsystem: "com.ericrabil.pwomise")
 public var SharedPromiseAbuseDelegate: PromiseAbuseDelegate?
 
 typealias dispatch_get_current_queue_t = @convention(c) () -> Unmanaged<DispatchQueue>
@@ -100,6 +102,8 @@ public class Promise<Output>: CustomDebugStringConvertible {
         willSet {
             guard result == .pending, newValue != .pending else {
                 /// Result can only be set once – its a promise of a result, not a publisher
+                let resolutionStackTrace = resolutionStackTrace, callStackSymbols = Thread.callStackSymbols
+                abuseLog.fault("Double-completion of \(String(describing: type(of: self))) \n- original stack trace: \n\(resolutionStackTrace.joined(separator: "\n"))\n- violating stack trace: \(callStackSymbols)")
                 if let abuseDelegate = SharedPromiseAbuseDelegate {
                     abuseDelegate.promise(self, doubleResolvedWithResult: newValue, resolutionStackTrace: resolutionStackTrace, abusingStackTrace: Thread.callStackSymbols)
                 } else {
