@@ -25,6 +25,10 @@ private let dispatch_get_current_queue = dlsym(dlopen(nil, RTLD_GLOBAL), "dispat
     unsafeBitCast($0, to: dispatch_get_current_queue_t.self)
 }
 
+public struct PromiseRuntime {
+    /// Enable this when debugging double-resolve errors to locate the first resolver
+    public static var recordResolutionStackTrace = false
+}
 public class Promise<Output>: CustomDebugStringConvertible {
     internal typealias Pending = PendingPromise<Output, Error>
     public typealias Completion = Result<Output, Error>
@@ -114,7 +118,9 @@ public class Promise<Output>: CustomDebugStringConvertible {
                 return
             }
             
-            resolutionStackTrace = Thread.callStackSymbols
+            if PromiseRuntime.recordResolutionStackTrace {
+                resolutionStackTrace = Thread.callStackSymbols
+            }
         }
     }
     
